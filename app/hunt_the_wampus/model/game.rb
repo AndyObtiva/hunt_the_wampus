@@ -5,14 +5,19 @@ class HuntTheWampus
       alias has_arrow? has_arrow
       
       def initialize
-        generate_board
-        @agent_location = [3, 0]
-        @score = 0
-        @has_arrow = true
+        start
       end
+      
+      def start
+        self.agent_location = [3, 0]
+        self.score = 0
+        self.has_arrow = true
+        generate_board
+      end
+      alias restart start
     
       def generate_board
-        @board ||= [
+        self.board = [
           [:stench, nil, nil, nil],
           [:wampus, [:gold, :stench], nil, nil],
           [:stench, nil, :breeze, nil],
@@ -21,6 +26,7 @@ class HuntTheWampus
       end
       
       def move_up
+        return unless alive?
         # TODO return unless game alive? is true
         old_agent_location = @agent_location.clone
         @agent_location[0] = [@agent_location[0] - 1, 0].max
@@ -30,6 +36,7 @@ class HuntTheWampus
       end
       
       def move_down
+        return unless alive?
         old_agent_location = @agent_location.clone
         @agent_location[0] = [@agent_location[0] + 1, 3].min
         remove_object_from_board(:agent, *old_agent_location)
@@ -38,6 +45,7 @@ class HuntTheWampus
       end
       
       def move_left
+        return unless alive?
         old_agent_location = @agent_location.clone
         @agent_location[1] = [@agent_location[1] - 1, 0].max
         remove_object_from_board(:agent, *old_agent_location)
@@ -46,6 +54,7 @@ class HuntTheWampus
       end
       
       def move_right
+        return unless alive?
         old_agent_location = @agent_location.clone
         @agent_location[1] = [@agent_location[1] + 1, 3].min
         remove_object_from_board(:agent, *old_agent_location)
@@ -54,6 +63,7 @@ class HuntTheWampus
       end
       
       def grab_gold
+        return unless alive?
         removal_success = remove_object_from_board(:gold, *@agent_location)
         self.score -= 1
         self.score += 1000 if removal_success
@@ -76,27 +86,25 @@ class HuntTheWampus
       end
       
       def shoot_arrow_vertically(location_range)
+        return unless alive? && has_arrow?
         wampus_killed_location = nil
-        if has_arrow
-          self.has_arrow = false
-          self.score -= 1
-          location_range.each do |row|
-            column = @agent_location[1]
-            wampus_killed_location ||= check_if_wampus_dead_at_location(row, column)
-          end
+        self.has_arrow = false
+        self.score -= 1
+        location_range.each do |row|
+          column = @agent_location[1]
+          wampus_killed_location ||= check_if_wampus_dead_at_location(row, column)
         end
         wampus_killed_location
       end
       
       def shoot_arrow_horizontally(location_range)
+        return unless alive? && has_arrow?
         wampus_killed_location = nil
-        if has_arrow
-          self.has_arrow = false
-          self.score -= 1
-          location_range.each do |column|
-            row = @agent_location[0]
-            wampus_killed_location ||= check_if_wampus_dead_at_location(row, column)
-          end
+        self.has_arrow = false
+        self.score -= 1
+        location_range.each do |column|
+          row = @agent_location[0]
+          wampus_killed_location ||= check_if_wampus_dead_at_location(row, column)
         end
         wampus_killed_location
       end
