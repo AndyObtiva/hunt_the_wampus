@@ -174,7 +174,6 @@ GEM
       method_source (>= 0.8.2, < 2.0.0)
     text-table (1.2.4)
     thread_safe (0.3.6)
-    to_collection (2.0.1)
     tty-color (0.6.0)
     tty-cursor (0.7.1)
     tty-prompt (0.23.1)
@@ -199,7 +198,6 @@ DEPENDENCIES
   minitest-global_expectations
   rspec (~> 3.5.0)
   simplecov
-  to_collection (~> 2.0.1)
 
 BUNDLED WITH
    2.4.10

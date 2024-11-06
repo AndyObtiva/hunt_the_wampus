@@ -1,9 +1,6 @@
 require 'puts_debuggerer'
-require 'to_collection'
 
 require 'hunt_the_wampus/model/game'
-
-using ToCollection
 
 class HuntTheWampus
   module View
@@ -78,7 +75,7 @@ class HuntTheWampus
                         default_font family: 'Arial', size: 30
                         
                         if [row, column] == @game.agent_location
-                          @game.board[row][column].to_collection.each_with_index do |object, object_index|
+                          @game.board[row][column].each_with_index do |object, object_index|
                             if object_index > 0
                               string(" / \n") {
                                 color @game.status == :playing ? :black : (@game.status == :lost ? :red : :green)

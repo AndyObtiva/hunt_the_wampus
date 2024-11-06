@@ -5,7 +5,6 @@ source 'https://rubygems.org'
 git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
 
 gem 'glimmer-dsl-libui', '~> 0.12.4'
-gem 'to_collection', '~> 2.0.1'
 
 group :development do
   gem 'rspec', '~> 3.5.0'

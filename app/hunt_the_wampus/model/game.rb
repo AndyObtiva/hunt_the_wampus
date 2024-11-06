@@ -18,48 +18,27 @@ class HuntTheWampus
     
       def generate_board
         self.board = [
-          [:stench, nil, nil, :exit],
-          [:wampus, [:gold, :stench], nil, nil],
-          [:stench, nil, :breeze, nil],
-          [:agent, :breeze, :pit, :breeze],
+          [[:stench], [], [], [:exit]],
+          [[:wampus], [:gold, :stench], [], []],
+          [[:stench], [], [:breeze], []],
+          [[:agent], [:breeze], [:pit], [:breeze]],
         ]
       end
       
       def move_up
-        return unless status == :playing
-        old_agent_location = @agent_location.clone
-        @agent_location[0] = [@agent_location[0] - 1, 0].max
-        remove_object_from_board(:agent, *old_agent_location)
-        add_object_to_board(:agent, *@agent_location)
-        self.score -= 1
+        move_agent_location { |agent_location| agent_location[0] = [agent_location[0] - 1, 0].max }
       end
       
       def move_down
-        return unless status == :playing
-        old_agent_location = @agent_location.clone
-        @agent_location[0] = [@agent_location[0] + 1, 3].min
-        remove_object_from_board(:agent, *old_agent_location)
-        add_object_to_board(:agent, *@agent_location)
-        self.score -= 1
+        move_agent_location { |agent_location| agent_location[0] = [agent_location[0] + 1, 3].min }
       end
       
       def move_left
-        return unless status == :playing
-        old_agent_location = @agent_location.clone
-        @agent_location[1] = [@agent_location[1] - 1, 0].max
-        remove_object_from_board(:agent, *old_agent_location)
-        add_object_to_board(:agent, *@agent_location)
-        self.score -= 1
+        move_agent_location { |agent_location| agent_location[1] = [agent_location[1] - 1, 0].max }
       end
       
       def move_right
-        return unless status == :playing
-        old_agent_location = @agent_location.clone
-        @agent_location[1] = [@agent_location[1] + 1, 3].min
-        remove_object_from_board(:agent, *old_agent_location)
-        add_object_to_board(:agent, *@agent_location)
-        self.score -= 1
-        # TODO refactor to share logic across move methods
+        move_agent_location { |agent_location| agent_location[1] = [agent_location[1] + 1, 3].min }
       end
       
       def grab_gold
@@ -149,29 +128,30 @@ class HuntTheWampus
       
       private
       
+      def move_agent_location(&agent_location_updater)
+        return unless status == :playing
+        old_agent_location = @agent_location.clone
+        agent_location_updater.call(@agent_location)
+        remove_object_from_board(:agent, *old_agent_location)
+        add_object_to_board(:agent, *@agent_location)
+        self.score -= 1
+      end
+      
       def remove_object_from_board(object, row, column)
         return false unless row.between?(0, 3) && column.between?(0, 3)
         
         cell = @board.dig(row, column)
-        if cell.is_a?(Array) && cell.include?(object)
+        if cell.include?(object)
           @board[row][column].delete(object)
-          @board[row][column] = @board[row][column][0] if @board[row][column].size == 1
-          true
-        elsif cell == object
-          @board[row][column] = nil
           true
         end
       end
       
       def add_object_to_board(object, row, column)
         cell = @board.dig(row, column)
-        if cell.is_a?(Array) && !cell.include?(object)
+        if !cell.include?(object)
           @board[row][column] << object
           @board[row][column] = @board[row][column].sort
-        elsif !cell.is_a?(Array) && cell
-          @board[row][column] = [cell, object].sort
-        else
-          @board[row][column] = object
         end
       end
     end
