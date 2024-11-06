@@ -18,7 +18,7 @@ class HuntTheWampus
     
       def generate_board
         self.board = [
-          [:stench, nil, nil, nil],
+          [:stench, nil, nil, :exit],
           [:wampus, [:gold, :stench], nil, nil],
           [:stench, nil, :breeze, nil],
           [:agent, :breeze, :pit, :breeze],
@@ -26,8 +26,7 @@ class HuntTheWampus
       end
       
       def move_up
-        return unless alive?
-        # TODO return unless game alive? is true
+        return unless status == :playing
         old_agent_location = @agent_location.clone
         @agent_location[0] = [@agent_location[0] - 1, 0].max
         remove_object_from_board(:agent, *old_agent_location)
@@ -36,7 +35,7 @@ class HuntTheWampus
       end
       
       def move_down
-        return unless alive?
+        return unless status == :playing
         old_agent_location = @agent_location.clone
         @agent_location[0] = [@agent_location[0] + 1, 3].min
         remove_object_from_board(:agent, *old_agent_location)
@@ -45,7 +44,7 @@ class HuntTheWampus
       end
       
       def move_left
-        return unless alive?
+        return unless status == :playing
         old_agent_location = @agent_location.clone
         @agent_location[1] = [@agent_location[1] - 1, 0].max
         remove_object_from_board(:agent, *old_agent_location)
@@ -54,16 +53,17 @@ class HuntTheWampus
       end
       
       def move_right
-        return unless alive?
+        return unless status == :playing
         old_agent_location = @agent_location.clone
         @agent_location[1] = [@agent_location[1] + 1, 3].min
         remove_object_from_board(:agent, *old_agent_location)
         add_object_to_board(:agent, *@agent_location)
         self.score -= 1
+        # TODO refactor to share logic across move methods
       end
       
       def grab_gold
-        return unless alive?
+        return unless status == :playing
         removal_success = remove_object_from_board(:gold, *@agent_location)
         self.score -= 1
         self.score += 1000 if removal_success
@@ -86,7 +86,7 @@ class HuntTheWampus
       end
       
       def shoot_arrow_vertically(location_range)
-        return unless alive? && has_arrow?
+        return unless status == :playing && has_arrow?
         wampus_killed_location = nil
         self.has_arrow = false
         self.score -= 1
@@ -98,7 +98,7 @@ class HuntTheWampus
       end
       
       def shoot_arrow_horizontally(location_range)
-        return unless alive? && has_arrow?
+        return unless status == :playing && has_arrow?
         wampus_killed_location = nil
         self.has_arrow = false
         self.score -= 1
@@ -123,24 +123,28 @@ class HuntTheWampus
         wampus_killed_location
       end
       
-      [:stench, :gold, :breeze, :pit, :wampus].each do |object|
-        define_method("#{object}?") do
-          board_has_object_at_location?(object, *@agent_location)
-        end
-      end
-      
       def board_has_object_at_location?(object, row, column)
         cell = @board.dig(row, column)
         cell == object || (cell.is_a?(Array) && cell.include?(object))
       end
       
-      def alive?
-        !dead?
+      def agent_alive?
+        !agent_dead?
       end
       
-      def dead?
+      def agent_dead?
         cell = @board.dig(*@agent_location)
         cell.is_a?(Array) && (cell.include?(:pit) || cell.include?(:wampus))
+      end
+      
+      def status
+        if board_has_object_at_location?(:exit, *agent_location)
+          :won
+        elsif agent_dead?
+          :lost
+        else
+          :playing
+        end
       end
       
       private

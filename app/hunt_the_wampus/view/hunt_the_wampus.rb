@@ -32,19 +32,21 @@ class HuntTheWampus
             area {
               content(@game, :score) do
                 rectangle(0, 0, 640, 160) {
-                  fill :grey
+                  fill :lightgrey
                 }
                 
                 text(22, 44, 640) {
                   default_font family: 'Arial', size: 60
                     
-                  string('score: ') {
-                    color :white
-                  }
+                  string('score: ')
                     
-                  string(@game.score.to_s) {
-                    color :white
-                  }
+                  string(@game.score.to_s)
+                  
+                  if @game.status != :playing
+                    string(" (#{@game.status})") {
+                      color @game.status == :lost ? :red : :green
+                    }
+                  end
                 }
               end
               
@@ -79,11 +81,11 @@ class HuntTheWampus
                           @game.board[row][column].to_collection.each_with_index do |object, object_index|
                             if object_index > 0
                               string(" / \n") {
-                                color @game.alive? ? :black : :red
+                                color @game.status == :playing ? :black : (@game.status == :lost ? :red : :green)
                               }
                             end
                             string(object.to_s) {
-                              color @game.alive? ? :black : :red
+                              color @game.status == :playing ? :black :  (@game.status == :lost ? :red : :green)
                             }
                           end
                         end
