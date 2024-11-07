@@ -40,11 +40,11 @@ Cell locations are represented by 0-indexed [row, column] pairs starting from th
 
 Every game board is generated initially with the following objects in different cells (these objects cannot share the same cell in the initial state of the game):
 - Agent: a player who:
- - Can move horizontally (right/left) and vertically (up/down)
- - Must avoid the Wampus and Pit
- - Can shoot an arrow horizontally (right/left) and vertically (up/down) to hit the Wampus from afar and score 100 (has 1 arrow only, which is gone if the Wampus is missed)
- - Can find the Gold and grab it to score 1000
- - Must reach the Exit to win the game.
+  - Can move horizontally (right/left) and vertically (up/down)
+  - Must avoid the Wampus and Pit
+  - Can shoot an arrow horizontally (right/left) and vertically (up/down) to hit the Wampus from afar and score 100 (has 1 arrow only, which is gone if the Wampus is missed)
+  - Can find the Gold and grab it to score 1000
+  - Must reach the Exit to win the game.
 - Wampus: a monster with a bad Stench that is sensed on every neighboring cell horizontally and vertically. The Wampus kills the Agent instantly if the Agent happens to move into the Wampus cell by mistake.
 - Pit: a very deep pit with a Breeze that is sensed on every neighboring cell horizontally and vertically   that causes instant death to the Agent if he moves into its cell by mitake
 - Gold: a bar of gold that can be picked up by the Agent for a score of 1000.
