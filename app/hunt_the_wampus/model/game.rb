@@ -3,10 +3,16 @@ require_relative 'agent'
 class HuntTheWampus
   module Model
     class Game
-      attr_accessor :board
-      attr_reader :score, :status
+      OBJECTS = [:agent, :wampus, :pit, :gold, :exit]
+      EVIL_OBJECTS = [:wampus, :pit]
+      SENSES = [:stench, :breeze, :gold]
+      OBJECT_SENSES = {wampus: :stench, pit: :breeze}
     
-      def initialize
+      attr_accessor :board
+      attr_reader :score, :status, :random_board
+    
+      def initialize(random_board: false)
+        @random_board = random_board
         @agent = Agent.new
         restart
       end
@@ -15,12 +21,41 @@ class HuntTheWampus
         @agent.restart
         @score = 0
         @status = :playing
-        @board = [
-          [[:stench], [], [], [:exit]],
-          [[:wampus], [:gold, :stench], [], []],
-          [[:stench], [], [:breeze], []],
-          [[:agent], [:breeze], [:pit], [:breeze]],
-        ]
+        generate_board
+      end
+      
+      def generate_board
+        if random_board
+          @board = empty_board
+          objects = OBJECTS.dup
+          object_locations = 4.times.to_a.permutation(2).to_a.shuffle.take(OBJECTS.size)
+          objects.each_with_index do |object, object_index|
+            object_location = object_locations[object_index]
+            object_row, object_column = object_location
+            if EVIL_OBJECTS.include?(object)
+              @board[object_row][object_column] = [object]
+            else
+              @board[object_row][object_column] << object
+            end
+            add_senses(object, object_location)
+          end
+          @board
+        else
+          @board = [
+            [[:stench], [], [], [:exit]],
+            [[:wampus], [:gold, :stench], [], []],
+            [[:stench], [], [:breeze], []],
+            [[:agent], [:breeze], [:pit], [:breeze]],
+          ]
+        end
+      end
+      
+      def empty_board
+        4.times.map do |row|
+          4.times.map do |column|
+            []
+          end
+        end
       end
     
       def agent_location
@@ -116,6 +151,28 @@ class HuntTheWampus
         row, column = location
         return unless row.between?(0, 3) && column.between?(0, 3)
         board[row][column].delete(object)
+      end
+      
+      def add_object(object, location)
+        row, column = location
+        return unless row.between?(0, 3) && column.between?(0, 3)
+        board[row][column] << object
+        board[row][column].sort!
+      end
+      
+      def add_senses(object, location)
+        sense = OBJECT_SENSES[object]
+        return unless sense
+        row, column = location
+        location1 = [row - 1, column]
+        # TODO unless cell has wampus or breeze
+        add_object(sense, location1) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location2 = [row + 1, column]
+        add_object(sense, location2) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location3 = [row, column + 1]
+        add_object(sense, location3) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location4 = [row, column - 1]
+        add_object(sense, location4) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
       end
         
       def agent_shoots_arrow(row_diff, column_diff)
