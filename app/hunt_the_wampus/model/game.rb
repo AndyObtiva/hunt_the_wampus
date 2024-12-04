@@ -8,40 +8,39 @@ class HuntTheWampus
       SENSES = [:stench, :breeze, :gold]
       EVIL_OBJECT_SENSES = {wampus: :stench, pit: :breeze}
     
-      attr_accessor :board
-      attr_reader :score, :status, :random_board
+      attr_accessor :board, :score, :status
+      attr_reader :agent, :random_board
     
       def initialize(random_board: false)
         @random_board = random_board
-        @agent = Agent.new
+        @agent = Agent.new(self)
         restart
       end
       
       def restart
-        @agent.restart
-        @score = 0
-        @status = :playing
+        agent.restart
+        self.score = 0
+        self.status = :playing
         generate_board
       end
       
       def generate_board
         if random_board
-          @board = empty_board
+          self.board = empty_board
           objects = OBJECTS.dup
           object_locations = 4.times.to_a.permutation(2).to_a.shuffle.take(OBJECTS.size)
           objects.each_with_index do |object, object_index|
             object_location = object_locations[object_index]
             object_row, object_column = object_location
             if EVIL_OBJECTS.include?(object)
-              @board[object_row][object_column] = [object]
+              board[object_row][object_column] = [object]
             else
-              @board[object_row][object_column] << object
+              board[object_row][object_column] << object
             end
-            add_senses(object, object_location)
+            generate_senses(object, object_location)
           end
-          @board
         else
-          @board = [
+          self.board = [
             [[:stench], [], [], [:exit]],
             [[:wampus], [:gold, :stench], [], []],
             [[:stench], [], [:breeze], []],
@@ -71,23 +70,39 @@ class HuntTheWampus
       end
     
       def agent_location
-        @agent.location
+        agent.location
       end
     
       def agent_location=(location)
-        @agent.location = location
+        agent.location = location
+      end
+      
+      def agent_cell
+        agent.cell
       end
       
       def has_arrow?
-        @agent.has_arrow?
+        agent.has_arrow?
       end
       
       def agent_alive?
-        @agent.alive?
+        agent.alive?
       end
       
       def agent_dead?
-        @agent.dead?
+        agent.dead?
+      end
+      
+      def agent_senses_stench?
+        agent.sense_stench?
+      end
+      
+      def agent_senses_breeze?
+        agent.sense_breeze?
+      end
+      
+      def agent_senses_gold?
+        agent.sense_gold?
       end
       
       def move_up
@@ -108,21 +123,21 @@ class HuntTheWampus
 
       def move_agent(row_diff, column_diff)
         return unless status == :playing
-        @score -= 1
+        self.score -= 1
         agent_row, agent_column = agent_location
         board[agent_row][agent_column].delete(:agent)
         new_agent_row = [[agent_row + row_diff, 0].max, 3].min
         new_agent_column = [[agent_column + column_diff, 0].max, 3].min
-        @agent.location = [new_agent_row, new_agent_column]
+        self.agent_location = [new_agent_row, new_agent_column]
         board[new_agent_row][new_agent_column] << :agent
         board[new_agent_row][new_agent_column].sort!
         update_status
       end
       
       def grab_gold
-        @score -= 1
+        self.score -= 1
         if agent_cell.include?(:gold)
-          @score += 1000
+          self.score += 1000
           remove_object(:gold, agent_location)
         end
       end
@@ -147,16 +162,11 @@ class HuntTheWampus
       
       def update_status
         if !agent_cell.intersection([:wampus, :pit]).empty?
-          @status = :lost
-          @agent.alive = false
+          self.status = :lost
+          agent.alive = false
         elsif agent_cell.include?(:exit)
-          @status = :won
+          self.status = :won
         end
-      end
-      
-      def agent_cell
-        agent_row, agent_column = agent_location
-        board[agent_row][agent_column]
       end
       
       def remove_object(object, location)
@@ -172,32 +182,35 @@ class HuntTheWampus
         board[row][column].sort!
       end
       
-      def add_senses(object, location)
+      def generate_senses(object, location)
         sense = EVIL_OBJECT_SENSES[object]
         return unless sense
         row, column = location
         location1 = [row - 1, column]
-        # TODO unless cell has wampus or breeze
-        add_object(sense, location1) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location1 = nil if location1[0] < 0
+        add_object(sense, location1) if location1 && board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
         location2 = [row + 1, column]
-        add_object(sense, location2) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location2 = nil if location2[0] > 3
+        add_object(sense, location2) if location2 && board[location2[0]][location2[1]].intersection(EVIL_OBJECTS).empty?
         location3 = [row, column + 1]
-        add_object(sense, location3) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location3 = nil if location3[1] > 3
+        add_object(sense, location3) if location3 && board[location3[0]][location3[1]].intersection(EVIL_OBJECTS).empty?
         location4 = [row, column - 1]
-        add_object(sense, location4) if board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location4 = nil if location4[1] < 0
+        add_object(sense, location4) if location4 && board[location4[0]][location4[1]].intersection(EVIL_OBJECTS).empty?
       end
         
       def agent_shoots_arrow(row_diff, column_diff)
         return unless has_arrow?
-        @agent.has_arrow = false
-        @score -= 1
+        agent.has_arrow = false
+        self.score -= 1
         agent_row, agent_column = agent_location
         next_row = [[agent_row + row_diff, 0].max, 3].min
         next_column = [[agent_column + column_diff, 0].max, 3].min
         last_row = last_column = nil
         until next_row == last_row && next_column == last_column
           if board[next_row][next_column].include?(:wampus)
-            @score += 100
+            self.score += 100
             wampus_killed_location = [next_row, next_column]
             remove_object(:wampus, wampus_killed_location)
             stench1_location = [next_row + 1, next_column]

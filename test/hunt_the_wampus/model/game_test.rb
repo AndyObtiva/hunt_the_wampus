@@ -20,6 +20,9 @@ describe 'Hunt The Wampus' do
     refute subject.agent_dead?
     _(subject.score).must_equal 0
     _(subject.status).must_equal :playing
+    refute subject.agent_senses_stench?
+    refute subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
   end
   
   it 'enables agent to move up and feel the stench of the wampus' do
@@ -31,6 +34,9 @@ describe 'Hunt The Wampus' do
     refute subject.agent_dead?
     _(subject.score).must_equal(-1)
     _(subject.status).must_equal :playing
+    assert subject.agent_senses_stench?
+    refute subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
     
     new_board = [
       [[:stench], [], [], [:exit]],
@@ -50,6 +56,9 @@ describe 'Hunt The Wampus' do
     refute subject.agent_dead?
     _(subject.score).must_equal(-1)
     _(subject.status).must_equal :playing
+    refute subject.agent_senses_stench?
+    assert subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
     
     new_board = [
       [[:stench], [], [], [:exit]],
@@ -70,6 +79,9 @@ describe 'Hunt The Wampus' do
     refute subject.agent_dead?
     _(subject.score).must_equal(-2)
     _(subject.status).must_equal :playing
+    refute subject.agent_senses_stench?
+    refute subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
     
     new_board = [
       [[:stench], [], [], [:exit]],
@@ -91,6 +103,9 @@ describe 'Hunt The Wampus' do
     refute subject.agent_dead?
     _(subject.score).must_equal(-3)
     _(subject.status).must_equal :playing
+    refute subject.agent_senses_stench?
+    assert subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
     
     new_board = [
       [[:stench], [], [], [:exit]],
@@ -113,6 +128,9 @@ describe 'Hunt The Wampus' do
     refute subject.agent_dead?
     _(subject.score).must_equal(-4)
     _(subject.status).must_equal :playing
+    refute subject.agent_senses_stench?
+    refute subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
     
     _(subject.board).must_equal board
   end
@@ -268,6 +286,9 @@ describe 'Hunt The Wampus' do
     assert subject.has_arrow?
     assert subject.agent_alive?
     refute subject.agent_dead?
+    assert subject.agent_senses_stench?
+    refute subject.agent_senses_breeze?
+    assert subject.agent_senses_gold?
     
     new_board = [
       [[:stench], [], [], [:exit]],
@@ -280,6 +301,9 @@ describe 'Hunt The Wampus' do
     subject.grab_gold
     
     _(subject.score).must_equal(1000 - 4)
+    assert subject.agent_senses_stench?
+    refute subject.agent_senses_breeze?
+    refute subject.agent_senses_gold?
     
     new_board = [
       [[:stench], [], [], [:exit]],
@@ -538,39 +562,40 @@ describe 'Hunt The Wampus' do
     assert_object_in_left_cell_of_evil_object(object, evil_object:, board:, row:, column:)
   end
   
-  it 'creates a game with a random board having one of each of the objects and evil object senses' do
-    subject = HuntTheWampus::Model::Game.new(random_board: true)
-    object_locations = []
-    subject.board.each_with_index do |row_cells, row|
-      row_cells.each_with_index do |cell, column|
-        assert cell.intersection(HuntTheWampus::Model::Game::OBJECTS).size <= 1
-        if cell.include?(:wampus)
-          refute cell.include?(:pit)
-          refute cell.include?(:agent)
-          refute cell.include?(:gold)
-          refute cell.include?(:exit)
-          assert_object_in_neighboring_cells_of_evil_object(:stench, evil_object: :wampus, board: subject.board, row:, column:)
-        elsif cell.include?(:pit)
-          refute cell.include?(:wampus)
-          refute cell.include?(:agent)
-          refute cell.include?(:gold)
-          refute cell.include?(:exit)
-          assert_object_in_neighboring_cells_of_evil_object(:breeze, evil_object: :pit, board: subject.board, row:, column:)
-        elsif cell.include?(:agent)
-          refute cell.include?(:wampus)
-          refute cell.include?(:pit)
-          refute cell.include?(:gold)
-          refute cell.include?(:exit)
-        elsif cell.include?(:gold)
-          refute cell.include?(:wampus)
-          refute cell.include?(:agent)
-          refute cell.include?(:pit)
-          refute cell.include?(:exit)
-        elsif cell.include?(:exit)
-          refute cell.include?(:wampus)
-          refute cell.include?(:agent)
-          refute cell.include?(:gold)
-          refute cell.include?(:pit)
+  it '(bonus) creates a game with a random board having one of each of the objects and evil object senses' do
+    10.times do # test random generation 10 times to help ensure no bugs
+      subject = HuntTheWampus::Model::Game.new(random_board: true)
+      subject.board.each_with_index do |row_cells, row|
+        row_cells.each_with_index do |cell, column|
+          assert cell.intersection(HuntTheWampus::Model::Game::OBJECTS).size <= 1
+          if cell.include?(:wampus)
+            refute cell.include?(:pit)
+            refute cell.include?(:agent)
+            refute cell.include?(:gold)
+            refute cell.include?(:exit)
+            assert_object_in_neighboring_cells_of_evil_object(:stench, evil_object: :wampus, board: subject.board, row:, column:)
+          elsif cell.include?(:pit)
+            refute cell.include?(:wampus)
+            refute cell.include?(:agent)
+            refute cell.include?(:gold)
+            refute cell.include?(:exit)
+            assert_object_in_neighboring_cells_of_evil_object(:breeze, evil_object: :pit, board: subject.board, row:, column:)
+          elsif cell.include?(:agent)
+            refute cell.include?(:wampus)
+            refute cell.include?(:pit)
+            refute cell.include?(:gold)
+            refute cell.include?(:exit)
+          elsif cell.include?(:gold)
+            refute cell.include?(:wampus)
+            refute cell.include?(:agent)
+            refute cell.include?(:pit)
+            refute cell.include?(:exit)
+          elsif cell.include?(:exit)
+            refute cell.include?(:wampus)
+            refute cell.include?(:agent)
+            refute cell.include?(:gold)
+            refute cell.include?(:pit)
+          end
         end
       end
     end
