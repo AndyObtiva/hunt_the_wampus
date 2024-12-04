@@ -6,7 +6,7 @@ class HuntTheWampus
       OBJECTS = [:agent, :wampus, :pit, :gold, :exit]
       EVIL_OBJECTS = [:wampus, :pit]
       SENSES = [:stench, :breeze, :gold]
-      OBJECT_SENSES = {wampus: :stench, pit: :breeze}
+      EVIL_OBJECT_SENSES = {wampus: :stench, pit: :breeze}
     
       attr_accessor :board
       attr_reader :score, :status, :random_board
@@ -56,6 +56,18 @@ class HuntTheWampus
             []
           end
         end
+      end
+      
+      def to_s
+        output = "\n"
+        board.each_with_index do |row_cells, row|
+          row_cells.each_with_index do |cell, column|
+            output << cell.join('/').center(25)
+            output << ' | '
+          end
+          output << "\n"
+        end
+        output
       end
     
       def agent_location
@@ -161,7 +173,7 @@ class HuntTheWampus
       end
       
       def add_senses(object, location)
-        sense = OBJECT_SENSES[object]
+        sense = EVIL_OBJECT_SENSES[object]
         return unless sense
         row, column = location
         location1 = [row - 1, column]

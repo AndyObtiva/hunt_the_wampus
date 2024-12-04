@@ -493,4 +493,86 @@ describe 'Hunt The Wampus' do
     _(subject.score).must_equal 0
     _(subject.status).must_equal :playing
   end
+  
+  def assert_object_in_neighbording_cell_of_evil_object(object, evil_object:, cell:)
+    opposite_object = evil_object == :wampus ? :pit : :wampus
+    assert (cell.nil? || cell&.include?(object) || cell&.include?(opposite_object))
+  end
+  
+  def assert_object_in_top_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    new_row = row - 1
+    return if new_row < 0
+    new_column = column
+    new_cell = board[new_row][new_column]
+    assert_object_in_neighbording_cell_of_evil_object(object, evil_object:, cell: new_cell)
+  end
+  
+  def assert_object_in_bottom_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    new_row = row + 1
+    return if new_row > 3
+    new_column = column
+    new_cell = board[new_row][new_column]
+    assert_object_in_neighbording_cell_of_evil_object(object, evil_object:, cell: new_cell)
+  end
+  
+  def assert_object_in_right_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    new_row = row
+    new_column = column + 1
+    return if new_column > 3
+    new_cell = board[new_row][new_column]
+    assert_object_in_neighbording_cell_of_evil_object(object, evil_object:, cell: new_cell)
+  end
+  
+  def assert_object_in_left_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    new_row = row
+    new_column = column - 1
+    return if new_column < 0
+    new_cell = board[new_row][new_column]
+    assert_object_in_neighbording_cell_of_evil_object(object, evil_object:, cell: new_cell)
+  end
+  
+  def assert_object_in_neighboring_cells_of_evil_object(object, evil_object:, board:, row:, column:)
+    assert_object_in_top_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    assert_object_in_bottom_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    assert_object_in_right_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+    assert_object_in_left_cell_of_evil_object(object, evil_object:, board:, row:, column:)
+  end
+  
+  it 'creates a game with a random board having one of each of the objects and evil object senses' do
+    subject = HuntTheWampus::Model::Game.new(random_board: true)
+    object_locations = []
+    subject.board.each_with_index do |row_cells, row|
+      row_cells.each_with_index do |cell, column|
+        assert cell.intersection(HuntTheWampus::Model::Game::OBJECTS).size <= 1
+        if cell.include?(:wampus)
+          refute cell.include?(:pit)
+          refute cell.include?(:agent)
+          refute cell.include?(:gold)
+          refute cell.include?(:exit)
+          assert_object_in_neighboring_cells_of_evil_object(:stench, evil_object: :wampus, board: subject.board, row:, column:)
+        elsif cell.include?(:pit)
+          refute cell.include?(:wampus)
+          refute cell.include?(:agent)
+          refute cell.include?(:gold)
+          refute cell.include?(:exit)
+          assert_object_in_neighboring_cells_of_evil_object(:breeze, evil_object: :pit, board: subject.board, row:, column:)
+        elsif cell.include?(:agent)
+          refute cell.include?(:wampus)
+          refute cell.include?(:pit)
+          refute cell.include?(:gold)
+          refute cell.include?(:exit)
+        elsif cell.include?(:gold)
+          refute cell.include?(:wampus)
+          refute cell.include?(:agent)
+          refute cell.include?(:pit)
+          refute cell.include?(:exit)
+        elsif cell.include?(:exit)
+          refute cell.include?(:wampus)
+          refute cell.include?(:agent)
+          refute cell.include?(:gold)
+          refute cell.include?(:pit)
+        end
+      end
+    end
+  end
 end
