@@ -1,26 +1,61 @@
-# Hunt The Wampus - Part 1 (The Model)
-## Montreal.rb Nov 2024 Hack Night
+# Hunt The Wampus - Part 2 (The View)
+## Montreal.rb Dec 2024 Hack Night
 
-Montreal.rb Nov 2024 Hack Night: Hunt The Wampus - Part 1 (The Model)
+Montreal.rb Dec 2024 Hack Night: Hunt The Wampus - Part 2 (The View)
 
 ![Hunt The Wampus](/hunt-the-wumpus.png)
 
 ## Meetup:
 
-https://www.meetup.com/montrealrb/events/303804858/
+https://www.meetup.com/montrealrb/events/304095501/
 
 ## Event:
 
 Bring your laptop to this Montreal.rb Hack Night where everyone participates in building Hunt The Wampus in Ruby as per the game description at this webpage (Hack Night requirements will diverge):
 https://www.javatpoint.com/the-wumpus-world-in-artificial-intelligence
 
-In part 1, attendees will implement the engine of Hunt The Wampus as the Model layer of the game. They will be provided with game requirements in the form of integration tests, which they must pass to complete the implementation of the Model layer. Attendees may optionally write additional unit tests if they find that helpful in the development process.
+In part 2, attendees are provided with a [complete Model layer implementation of Hunt The Wampus](https://github.com/AndyObtiva/hunt_the_wampus/tree/hack-night-part2-view), and they must add a View layer on top of it by utilizing any Ruby View approach, such as:
+- CLI: Command Line Interface (e.g. using puts and gets)
+- TUI: Textual User Interface (e.g. using Curses)
+- GUI: Graphical User Interface (e.g. using Glimmer DSL for LibUI [has canvas support, but no image support] or Glimmer DSL for SWT [has canvas and image support])
+- Web UI: Backend Web User Interface (e.g. using Rails and ERB, with or without Hotwire)
+- Web UI: Frontend Web User Interface (e.g. using Rails, Opal Ruby, and Glimmer DSL for Web)
 
-The expected end result of Hack Night part 1 is to become ready for part 2 at the next meetup (Dec 4, 2024), which will focus on adding a View layer on top of the Model layer completed in this event, by utilizing any Ruby View approach, such as CLI, TUI, GUI, Web UI Backend, or Web UI Frontend (there will be no View related work in this event though).
+There is no requirement for previous participation in part 1, but attendees who participated in [Hack Night part 1 (Nov 6. 2024 meetup)](https://github.com/AndyObtiva/hunt_the_wampus/tree/hack-night-part1-model), which was about building the Model layer, could alternatively use their own Model layer implementation as the basis for adding the View layer.
 
-It is encouraged that attendees collaborate when needed, ask each other questions, and help each other.
+It is OK to:
+- Modify the provided Model layer if needed.
+- Display only words or letters on the screen that signify game objects/senses in case displaying graphics takes too much effort for the Hack Night allotted time.
 
-The goal of this Hack Night is to practice Ruby Software Engineering skills in a low-pressure fun environment while building a non-serious game.
+It is encouraged that:
+- Attendees try out Ruby technologies they do not have much experience with.
+- Attendees collaborate when needed, ask each other questions, and help each other.
+
+The goal of this Hack Night is to practice Ruby Software Engineering skills in a low-pressure fun environment while building a non-serious game in addition to learning new or undiscovered Ruby technologies.
+
+## Initial Code:
+
+You can clone the github repo [hack-night-part2-view](https://github.com/AndyObtiva/hunt_the_wampus/tree/hack-night-part2-view) branch to find a complete Model layer implementation of Hunt The Wampus that you can use as a starting point for adding the View in Ruby.
+
+```
+git clone https://github.com/AndyObtiva/hunt_the_wampus.git
+```
+
+```
+git checkout hack-night-part2-view
+```
+
+## Game Requirements:
+
+- Display game board with only the agent cell visible.
+- Support moving up, down, left, and right (one cell at a time) with keyboard keys or clickable mouse buttons. As the agent moves, the new cell the agent lands on becomes visible, and the old cell becomes no longer visible. The visible cell will display objects (like gold) and senses (like stench and breeze).
+- Support grabbing gold if the current agent cell has gold.
+- Support shooting arrow up, down, left, and right, indicating if the wampus was killed after the arrow is shot.
+- Support dying if the agent encounters the wampus or the pit.
+- Support winning if the agent encounters the exit.
+- Show live score, which gets updated correctly after every move as per [Game Scoring](#game-scoring) details below.
+- Support restarting the game.
+- (bonus) Support random generation of boards (passing `random_board: false` to the `HuntTheWampus::Model::Game` object.
 
 ## Game Rules:
 
@@ -90,36 +125,6 @@ Game states are:
 - Playing: the Agent is still alive and has not reached the Exit yet.
 - Won: the Agent is alive and has reached the Exit.
 - Lost: the Agent died by meeting the Wampus or falling into the Pit.
-
-## Game Requirements:
-
-Game requirements are codified in integration tests in the file:
-
-[test/hunt_the_wampus/model/game_test.rb](/test/hunt_the_wampus/model/game_test.rb)
-
-Hack Night participants must implement `HuntTheWampus::Model::Game` Model to pass all the tests in the file mentioned above.
-
-The game board data structure will be an Array of Arrays of Arrays of Symbols whereby:
-- 1st level Array contains 2nd level row Arrays
-- Every 2nd level row Array contains 3rd level cell Arrays
-- Every 3rd level cell Array contains object Symbols
-
-Example:
-
-```ruby
-[
-  [[:stench], [], [], [:exit]],
-  [[:wampus], [:gold, :stench], [], []],
-  [[:stench], [], [:breeze], []],
-  [[:agent], [:breeze], [:pit], [:breeze]],
-]
-```
-
-Optionally, participants could implement extra objects following Object Oriented Programming or write additional Unit Tests if they find that helpful in the development process.
-
-## Game Bonus Requirements:
-
-Optionally, if participants finish the implementation required above early in the Hack Night, then they can replace the static implementation of the game board with a dynamic random implementation that generates a different game board on every start of the game.
 
 ## Copyright
 
