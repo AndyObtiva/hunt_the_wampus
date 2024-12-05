@@ -6,7 +6,34 @@ class HuntGame
   include Glimmer::Web::Component
   
   before_render do
-    @game = HuntTheWampus::Model::Game.new #(random_board: true)
+    @game = HuntTheWampus::Model::Game.new(random_board: true)
+  end
+  
+  after_render do
+    Element['body'].on('keydown') do |event|
+      case event.key_code
+      when 38 # up
+        @game.move_up
+      when 39 # right
+        @game.move_right
+      when 40 # down
+        @game.move_down
+      when 37 # left
+        @game.move_left
+      when 71 # g (grab gold)
+        @game.grab_gold
+      when 87 # w (shoot arrow up)
+        @game.shoot_arrow_up
+      when 68 # d (shoot arrow right)
+        @game.shoot_arrow_right
+      when 83 # s (shoot arrow down)
+        @game.shoot_arrow_down
+      when 65 # a (shoot arrow left)
+        @game.shoot_arrow_left
+      when 82 # r (restart)
+        @game.restart
+      end
+    end
   end
   
   markup {
@@ -24,12 +51,6 @@ class HuntGame
       }
       
       div {
-        button('Restart') {
-          onclick do
-            @game.restart
-          end
-        }
-        
         button('<') {
           disabled <= [@game, :status, on_read: ->(value) { value != :playing }]
           
@@ -103,6 +124,12 @@ class HuntGame
           
           onclick do
             @game.shoot_arrow_right
+          end
+        }
+        
+        button('Restart') {
+          onclick do
+            @game.restart
           end
         }
       }
