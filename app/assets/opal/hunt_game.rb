@@ -140,8 +140,12 @@ class HuntGame
             @game.board.each_with_index do |row_cells, row|
               tr {
                 row_cells.each_with_index do |cell, column|
-                  td(style: {width: 60, height: 60, border: '1px solid black', text_align: :center}) {
-                    cell.map(&:to_s).join(' / ') if cell.include?(:agent)
+                  td(style: {width: 150, height: 150, border: '1px solid black', text_align: :center}) {
+                    if cell.include?(:agent)
+                      cell.each do |object|
+                        img(src: "/assets/#{object}.png", style: {width: 40.%})
+                      end
+                    end
                   }
                 end
               }

@@ -129,9 +129,9 @@ class HuntTheWampus
         board[agent_row][agent_column].delete(:agent)
         new_agent_row = [[agent_row + row_diff, 0].max, 3].min
         new_agent_column = [[agent_column + column_diff, 0].max, 3].min
-        self.agent_location = [new_agent_row, new_agent_column]
-        board[new_agent_row][new_agent_column] << :agent
+        board[new_agent_row][new_agent_column] += [:agent]
         board[new_agent_row][new_agent_column].sort!
+        self.agent_location = [new_agent_row, new_agent_column]
         update_status
       end
       
