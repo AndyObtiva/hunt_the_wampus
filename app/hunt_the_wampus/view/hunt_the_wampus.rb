@@ -15,7 +15,7 @@ class HuntTheWampus
       }
           
       before_body do
-        @game = Model::Game.new
+        @game = Model::Game.new(random_board: true)
         menu_bar
       end
   
@@ -27,7 +27,7 @@ class HuntTheWampus
           
           vertical_box {
             area {
-              content(@game, :score) do
+              content(@game, computed_by: [:score, :status]) do
                 rectangle(0, 0, 640, 160) {
                   fill :lightgrey
                 }
@@ -56,6 +56,8 @@ class HuntTheWampus
                   @game.send("shoot_arrow_#{shoot_arrow_direction}")
                 elsif area_key_event[:key] == 'g'
                   @game.grab_gold
+                elsif area_key_event[:key] == 'r'
+                  @game.restart
                 else
                   handled = false # we won't handle the event after all
                 end
@@ -74,7 +76,7 @@ class HuntTheWampus
                       text(22, 22, 160) {
                         default_font family: 'Arial', size: 30
                         
-                        if [row, column] == @game.agent_location
+                        if @game.board[row][column].include?(:agent)
                           @game.board[row][column].each_with_index do |object, object_index|
                             if object_index > 0
                               string(" / \n") {

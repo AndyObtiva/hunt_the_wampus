@@ -1,157 +1,233 @@
+require_relative 'agent'
+
 class HuntTheWampus
   module Model
     class Game
-      attr_accessor :board, :agent_location, :score, :has_arrow
-      alias has_arrow? has_arrow
-      
-      def initialize
-        start
+      OBJECTS = [:agent, :wampus, :pit, :gold, :exit]
+      EVIL_OBJECTS = [:wampus, :pit]
+      SENSES = [:stench, :breeze, :gold]
+      EVIL_OBJECT_SENSES = {wampus: :stench, pit: :breeze}
+    
+      attr_accessor :board, :score, :status
+      attr_reader :agent, :random_board
+    
+      def initialize(random_board: false)
+        @random_board = random_board
+        @agent = Agent.new(self)
+        restart
       end
       
-      def start
-        self.agent_location = [3, 0]
+      def restart
+        agent.restart
         self.score = 0
-        self.has_arrow = true
+        self.status = :playing
         generate_board
       end
-      alias restart start
-    
+      
       def generate_board
-        self.board = [
-          [[:stench], [], [], [:exit]],
-          [[:wampus], [:gold, :stench], [], []],
-          [[:stench], [], [:breeze], []],
-          [[:agent], [:breeze], [:pit], [:breeze]],
-        ]
-      end
-      
-      def move_up
-        move_agent_location { |agent_location| agent_location[0] = [agent_location[0] - 1, 0].max }
-      end
-      
-      def move_down
-        move_agent_location { |agent_location| agent_location[0] = [agent_location[0] + 1, 3].min }
-      end
-      
-      def move_left
-        move_agent_location { |agent_location| agent_location[1] = [agent_location[1] - 1, 0].max }
-      end
-      
-      def move_right
-        move_agent_location { |agent_location| agent_location[1] = [agent_location[1] + 1, 3].min }
-      end
-      
-      def grab_gold
-        return unless status == :playing
-        removal_success = remove_object_from_board(:gold, *@agent_location)
-        self.score -= 1
-        self.score += 1000 if removal_success
-      end
-      
-      def shoot_arrow_up
-        shoot_arrow_vertically(0..(@agent_location[0] - 1))
-      end
-      
-      def shoot_arrow_down
-        shoot_arrow_vertically((@agent_location[0] + 1)..3)
-      end
-      
-      def shoot_arrow_left
-        shoot_arrow_horizontally(0..(@agent_location[1] - 1))
-      end
-      
-      def shoot_arrow_right
-        shoot_arrow_horizontally((@agent_location[1] + 1)..3)
-      end
-      
-      def shoot_arrow_vertically(location_range)
-        return unless status == :playing && has_arrow?
-        wampus_killed_location = nil
-        self.has_arrow = false
-        self.score -= 1
-        location_range.each do |row|
-          column = @agent_location[1]
-          wampus_killed_location ||= check_if_wampus_dead_at_location(row, column)
+        if random_board
+          self.board = empty_board
+          objects = OBJECTS.dup
+          object_locations = 4.times.to_a.permutation(2).to_a.shuffle.take(OBJECTS.size)
+          objects.each_with_index do |object, object_index|
+            object_location = object_locations[object_index]
+            self.agent_location = object_location if object == :agent
+            object_row, object_column = object_location
+            if EVIL_OBJECTS.include?(object)
+              board[object_row][object_column] = [object]
+            else
+              board[object_row][object_column] << object
+            end
+            generate_senses(object, object_location)
+          end
+        else
+          self.board = [
+            [[:stench], [], [], [:exit]],
+            [[:wampus], [:gold, :stench], [], []],
+            [[:stench], [], [:breeze], []],
+            [[:agent], [:breeze], [:pit], [:breeze]],
+          ]
         end
-        wampus_killed_location
       end
       
-      def shoot_arrow_horizontally(location_range)
-        return unless status == :playing && has_arrow?
-        wampus_killed_location = nil
-        self.has_arrow = false
-        self.score -= 1
-        location_range.each do |column|
-          row = @agent_location[0]
-          wampus_killed_location ||= check_if_wampus_dead_at_location(row, column)
+      def empty_board
+        4.times.map do |row|
+          4.times.map do |column|
+            []
+          end
         end
-        wampus_killed_location
       end
       
-      def check_if_wampus_dead_at_location(row, column)
-        wampus_killed_location = nil
-        if board_has_object_at_location?(:wampus, row, column)
-          wampus_killed_location = [row, column]
-          remove_object_from_board(:wampus, *wampus_killed_location)
-          remove_object_from_board(:stench, wampus_killed_location[0] - 1, wampus_killed_location[1])
-          remove_object_from_board(:stench, wampus_killed_location[0] + 1, wampus_killed_location[1])
-          remove_object_from_board(:stench, wampus_killed_location[0], wampus_killed_location[1] - 1)
-          remove_object_from_board(:stench, wampus_killed_location[0], wampus_killed_location[1] + 1)
-          self.score += 100
+      def to_s
+        output = "\n"
+        board.each_with_index do |row_cells, row|
+          row_cells.each_with_index do |cell, column|
+            output += cell.join('/').center(25)
+            output += ' | '
+          end
+          output += "\n"
         end
-        wampus_killed_location
+        output
+      end
+    
+      def agent_location
+        agent.location
+      end
+    
+      def agent_location=(location)
+        agent.location = location
       end
       
-      def board_has_object_at_location?(object, row, column)
-        cell = @board.dig(row, column)
-        cell == object || (cell.is_a?(Array) && cell.include?(object))
+      def agent_cell
+        agent.cell
+      end
+      
+      def has_arrow?
+        agent.has_arrow?
       end
       
       def agent_alive?
-        !agent_dead?
+        agent.alive?
       end
       
       def agent_dead?
-        cell = @board.dig(*@agent_location)
-        cell.is_a?(Array) && (cell.include?(:pit) || cell.include?(:wampus))
+        agent.dead?
       end
       
-      def status
-        if board_has_object_at_location?(:exit, *agent_location)
-          :won
-        elsif agent_dead?
-          :lost
-        else
-          :playing
+      def agent_senses_stench?
+        agent.sense_stench?
+      end
+      
+      def agent_senses_breeze?
+        agent.sense_breeze?
+      end
+      
+      def agent_senses_gold?
+        agent.sense_gold?
+      end
+      
+      def move_up
+        move_agent(-1, 0)
+      end
+      
+      def move_right
+        move_agent(0, 1)
+      end
+      
+      def move_down
+        move_agent(1, 0)
+      end
+      
+      def move_left
+        move_agent(0, -1)
+      end
+
+      def move_agent(row_diff, column_diff)
+        return unless status == :playing
+        self.score -= 1
+        agent_row, agent_column = agent_location
+        board[agent_row][agent_column].delete(:agent)
+        new_agent_row = [[agent_row + row_diff, 0].max, 3].min
+        new_agent_column = [[agent_column + column_diff, 0].max, 3].min
+        self.agent_location = [new_agent_row, new_agent_column]
+        update_status
+        board[new_agent_row][new_agent_column] += [:agent]
+        board[new_agent_row][new_agent_column].sort!
+      end
+      
+      def grab_gold
+        self.score -= 1
+        if agent_cell.include?(:gold)
+          self.score += 1000
+          remove_object(:gold, agent_location)
         end
+      end
+      
+      def shoot_arrow_up
+        agent_shoots_arrow(-1, 0)
+      end
+      
+      def shoot_arrow_down
+        agent_shoots_arrow(1, 0)
+      end
+      
+      def shoot_arrow_right
+        agent_shoots_arrow(0, 1)
+      end
+      
+      def shoot_arrow_left
+        agent_shoots_arrow(0, -1)
       end
       
       private
       
-      def move_agent_location(&agent_location_updater)
-        return unless status == :playing
-        old_agent_location = @agent_location.clone
-        agent_location_updater.call(@agent_location)
-        remove_object_from_board(:agent, *old_agent_location)
-        add_object_to_board(:agent, *@agent_location)
-        self.score -= 1
-      end
-      
-      def remove_object_from_board(object, row, column)
-        return false unless row.between?(0, 3) && column.between?(0, 3)
-        
-        cell = @board.dig(row, column)
-        if cell.include?(object)
-          @board[row][column].delete(object)
-          true
+      def update_status
+        if !agent_cell.intersection([:wampus, :pit]).empty?
+          self.status = :lost
+          agent.alive = false
+        elsif agent_cell.include?(:exit)
+          self.status = :won
         end
       end
       
-      def add_object_to_board(object, row, column)
-        cell = @board.dig(row, column)
-        if !cell.include?(object)
-          @board[row][column] << object
-          @board[row][column] = @board[row][column].sort
+      def remove_object(object, location)
+        row, column = location
+        return unless row.between?(0, 3) && column.between?(0, 3)
+        board[row][column].delete(object)
+      end
+      
+      def add_object(object, location)
+        row, column = location
+        return unless row.between?(0, 3) && column.between?(0, 3)
+        board[row][column] << object
+        board[row][column].sort!
+      end
+      
+      def generate_senses(object, location)
+        sense = EVIL_OBJECT_SENSES[object]
+        return unless sense
+        row, column = location
+        location1 = [row - 1, column]
+        location1 = nil if location1[0] < 0
+        add_object(sense, location1) if location1 && board[location1[0]][location1[1]].intersection(EVIL_OBJECTS).empty?
+        location2 = [row + 1, column]
+        location2 = nil if location2[0] > 3
+        add_object(sense, location2) if location2 && board[location2[0]][location2[1]].intersection(EVIL_OBJECTS).empty?
+        location3 = [row, column + 1]
+        location3 = nil if location3[1] > 3
+        add_object(sense, location3) if location3 && board[location3[0]][location3[1]].intersection(EVIL_OBJECTS).empty?
+        location4 = [row, column - 1]
+        location4 = nil if location4[1] < 0
+        add_object(sense, location4) if location4 && board[location4[0]][location4[1]].intersection(EVIL_OBJECTS).empty?
+      end
+        
+      def agent_shoots_arrow(row_diff, column_diff)
+        return unless has_arrow?
+        agent.has_arrow = false
+        self.score -= 1
+        agent_row, agent_column = agent_location
+        next_row = [[agent_row + row_diff, 0].max, 3].min
+        next_column = [[agent_column + column_diff, 0].max, 3].min
+        last_row = last_column = nil
+        until next_row == last_row && next_column == last_column
+          if board[next_row][next_column].include?(:wampus)
+            self.score += 100
+            wampus_killed_location = [next_row, next_column]
+            remove_object(:wampus, wampus_killed_location)
+            stench1_location = [next_row + 1, next_column]
+            remove_object(:stench, stench1_location)
+            stench2_location = [next_row - 1, next_column]
+            remove_object(:stench, stench2_location)
+            stench3_location = [next_row, next_column + 1]
+            remove_object(:stench, stench3_location)
+            stench4_location = [next_row, next_column - 1]
+            remove_object(:stench, stench4_location)
+            return wampus_killed_location
+          end
+          last_row = next_row
+          last_column = next_column
+          next_row = [[next_row + row_diff, 0].max, 3].min
+          next_column = [[next_column + column_diff, 0].max, 3].min
         end
       end
     end
