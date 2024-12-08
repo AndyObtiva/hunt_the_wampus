@@ -1,6 +1,6 @@
 hunt_the_wampus===================
 
-Description goes here.
+![Hunt The Wampus LibUI](/hunt-the-wampus-solution-gui-glimmer-dsl-libui-text.gif)
 
 Contributing to hunt_the_wampus
 ------------------------------------------
