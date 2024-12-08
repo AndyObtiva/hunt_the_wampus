@@ -585,6 +585,7 @@ describe 'Hunt The Wampus' do
             refute cell.include?(:pit)
             refute cell.include?(:gold)
             refute cell.include?(:exit)
+          _(subject.agent_location).must_equal([row, column])
           elsif cell.include?(:gold)
             refute cell.include?(:wampus)
             refute cell.include?(:agent)

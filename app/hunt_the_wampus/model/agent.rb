@@ -10,9 +10,9 @@ class HuntTheWampus
       end
       
       def restart
-        @has_arrow = true
-        @alive = true
-        @location = [3, 0]
+        self.has_arrow = true
+        self.alive = true
+        self.location = [3, 0]
       end
       
       def has_arrow?

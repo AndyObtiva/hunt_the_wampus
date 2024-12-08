@@ -31,6 +31,7 @@ class HuntTheWampus
           object_locations = 4.times.to_a.permutation(2).to_a.shuffle.take(OBJECTS.size)
           objects.each_with_index do |object, object_index|
             object_location = object_locations[object_index]
+            self.agent_location = object_location if object == :agent
             object_row, object_column = object_location
             if EVIL_OBJECTS.include?(object)
               board[object_row][object_column] = [object]
@@ -61,10 +62,10 @@ class HuntTheWampus
         output = "\n"
         board.each_with_index do |row_cells, row|
           row_cells.each_with_index do |cell, column|
-            output << cell.join('/').center(25)
-            output << ' | '
+            output += cell.join('/').center(25)
+            output += ' | '
           end
-          output << "\n"
+          output += "\n"
         end
         output
       end
@@ -128,9 +129,9 @@ class HuntTheWampus
         board[agent_row][agent_column].delete(:agent)
         new_agent_row = [[agent_row + row_diff, 0].max, 3].min
         new_agent_column = [[agent_column + column_diff, 0].max, 3].min
-        self.agent_location = [new_agent_row, new_agent_column]
-        board[new_agent_row][new_agent_column] << :agent
+        board[new_agent_row][new_agent_column] += [:agent]
         board[new_agent_row][new_agent_column].sort!
+        self.agent_location = [new_agent_row, new_agent_column]
         update_status
       end
       
